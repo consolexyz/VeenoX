@@ -344,7 +344,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
         const widgetInstance = new Widget(widgetOptions);
 
         widgetInstance.onChartReady(async () => {
-          widgetInstance.activeChart().getTimeScale().setRightOffset(30);
+          widgetInstance.activeChart().getTimeScale().setRightOffset(0);
 
           widgetInstance.applyOverrides(overrides as any);
           setTvWidget(widgetInstance);
@@ -531,18 +531,18 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
   }, [asset?.symbol, custom_css_url, mobile, initChart]);
 
   return (
-    <div className="relative w-full chart">
+    <div className="relative w-full chart overflow-hidden">
       <div
         className={cn(
-          `absolute z-10 bg-secondary w-full transition-all duration-200 ease-in-out h-full`,
+          `absolute z-10 bg-secondary w-full  transition-all duration-200 ease-in-out h-full`,
           isChartLoading ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
       >
-        <div className="w-full h-full flex items-center justify-center">
+        <div className="w-full h-full  items-center justify-center">
           <img src="/loader/loader.gif" className="w-[150px]" alt="Loading" />
         </div>
       </div>
-      <div className={cn(`w-full h-full`, className)} ref={ref} />
+      <div className={cn(`w-full  h-full`, className)} ref={ref} />
     </div>
   );
 };

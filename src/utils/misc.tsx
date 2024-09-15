@@ -34,10 +34,10 @@ export function getFormattedAmount(
     canUseHTML?: boolean;
     isScientificNotation?: boolean;
   } = {
-    shouldNotMinifyBigNumbers: false,
-    canUseHTML: false,
-    isScientificNotation: false,
-  }
+      shouldNotMinifyBigNumbers: false,
+      canUseHTML: false,
+      isScientificNotation: false,
+    }
 ) {
   try {
     if (price) {
@@ -147,9 +147,8 @@ export function formatBigAmount(amount: number | string, precision = 3) {
   }
 
   if (precision) {
-    return `${amount.split(",")[0]}${
-      fractionalPart ? `.${fractionalPart}` : ""
-    }${letter}`;
+    return `${amount.split(",")[0]}${fractionalPart ? `.${fractionalPart}` : ""
+      }${letter}`;
   }
 
   return amount.split(",")[0] + letter;
@@ -293,9 +292,8 @@ export const getRemainingTime = (targetDate: number): string => {
   const min = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
   const sec = Math.floor((distance % (1000 * 60)) / 1000);
 
-  return `${hour < 10 ? `0${hour}` : hour}:${min < 10 ? `0${min}` : min}:${
-    sec < 10 ? `0${sec}` : sec
-  } `;
+  return `${hour < 10 ? `0${hour}` : hour}:${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec
+    } `;
 };
 
 export const getLeverageValue = (i: number) => {

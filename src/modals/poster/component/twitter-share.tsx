@@ -64,6 +64,7 @@ const TwitterShareButton = ({ message }: MessageType) => {
   return (
     <div className="mt-4 p-4 border border-gray-300 rounded-lg">
       <img
+
         src={message.imageUrl}
         alt="Trade Preview"
         className="w-full mb-4 rounded"

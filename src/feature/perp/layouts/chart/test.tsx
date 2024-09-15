@@ -1,6 +1,7 @@
 import { TradingView } from "@orderly.network/trading-view";
 import { FC } from "react";
 
+
 export const AdvancedChart: FC<{ symbol: string }> = ({ symbol }) => {
   return (
     <div className="w-full min-h-[35rem] [&_iframe]:min-h-[35rem]">
@@ -31,6 +32,7 @@ export const AdvancedChart: FC<{ symbol: string }> = ({ symbol }) => {
           "paneProperties.horzGridProperties.color": "#161B22",
           "paneProperties.vertGridProperties.color": "#161B22",
           "paneProperties.legendProperties.showSeriesTitle": "false",
+
         }}
       />
     </div>
