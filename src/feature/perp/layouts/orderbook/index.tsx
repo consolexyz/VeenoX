@@ -45,12 +45,12 @@ export const Orderbook = ({
     isMobileOpenTrade || isMobile
       ? 8
       : (sectionRef?.current?.clientHeight as number) > 950
-      ? 18
-      : (sectionRef?.current?.clientHeight as number) > 900
-      ? 16
-      : (sectionRef?.current?.clientHeight as number) > 800
-      ? 14
-      : 12;
+        ? 18
+        : (sectionRef?.current?.clientHeight as number) > 900
+          ? 16
+          : (sectionRef?.current?.clientHeight as number) > 800
+            ? 14
+            : 12;
 
   const [data, { isLoading, onDepthChange, depth, allDepths }] =
     useOrderbookStream(asset?.symbol, undefined, {
@@ -105,9 +105,8 @@ export const Orderbook = ({
   return (
     <section
       ref={sectionRef}
-      className={`w-full md:max-h-full ${
-        isMobileOpenTrade ? "h-auto max-h-full" : "h-[450px] max-h-[450px]"
-      } md:h-full  overflow-y-hidden md:min-w-[250px] `}
+      className={`w-full md:max-h-full ${isMobileOpenTrade ? "h-auto max-h-full" : "h-[450px] max-h-[450px]"
+        } md:h-full  overflow-y-hidden md:min-w-[250px] `}
     >
       {isMobileOpenTrade || isMobile ? null : (
         <>
@@ -127,9 +126,8 @@ export const Orderbook = ({
           </div>
           <div className="bg-terciary h-[1px] w-full relative">
             <div
-              className={`h-[1px] w-1/2 bottom-0 transition-all duration-200 ease-in-out bg-font-80 absolute ${
-                !activeSection ? "left-0" : "left-1/2"
-              }`}
+              className={`h-[1px] w-1/2 bottom-0 transition-all duration-200 ease-in-out bg-font-80 absolute ${!activeSection ? "left-0" : "left-1/2"
+                }`}
             />
           </div>
         </>
@@ -156,9 +154,8 @@ export const Orderbook = ({
                   onClick={() => {
                     if (onDepthChange) onDepthChange(entry);
                   }}
-                  className={`h-[22px] ${
-                    depth === entry ? "text-base_color font-bold" : "text-white"
-                  } w-fit px-1 text-xs`}
+                  className={`h-[22px] ${depth === entry ? "text-base_color font-bold" : "text-white"
+                    } w-fit px-1 text-xs`}
                 >
                   {entry}
                 </button>
@@ -169,12 +166,11 @@ export const Orderbook = ({
       )}
       {(activeSection === OrderbookSection.ORDERBOOK &&
         (mobileActiveSection === "Orderbook" || !mobileActiveSection)) ||
-      isMobileOpenTrade ? (
+        isMobileOpenTrade ? (
         <div
           // max-h-[670px]  overflow-y-scroll
-          className={`relative h-full md:h-calc-full-button ${
-            isMobileOpenTrade ? "min-w-[140px] w-full" : "w-auto"
-          }  sm:w-auto`}
+          className={`relative h-full md:h-calc-full-button ${isMobileOpenTrade ? "min-w-[140px] w-full" : "w-auto"
+            }  sm:w-auto`}
         >
           {!data?.asks?.length && !data?.bids?.length ? (
             <div className="w-full h-full flex items-center justify-center">
@@ -206,8 +202,8 @@ export const Orderbook = ({
                           j === 0
                             ? ask[j]
                             : typeof ask[j] === "number"
-                            ? getFormattedAmount(ask[j])
-                            : ask[j];
+                              ? getFormattedAmount(ask[j])
+                              : ask[j];
                         if (isMobileOpenTrade && (j === 0 || j === 2))
                           return (
                             <td
@@ -269,8 +265,8 @@ export const Orderbook = ({
                           j === 0
                             ? bid[j]
                             : typeof bid[j] === "number"
-                            ? getFormattedAmount(bid[j])
-                            : bid[j];
+                              ? getFormattedAmount(bid[j])
+                              : bid[j];
                         if (isMobileOpenTrade && (j === 0 || j === 2))
                           return (
                             <td

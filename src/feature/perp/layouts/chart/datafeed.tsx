@@ -89,7 +89,7 @@ export const Datafeed = (asset: FuturesAssetProps, ws: WS) => ({
       onResult([], { noData: true });
     }
   },
-  searchSymbols: () => {},
+  searchSymbols: () => { },
   subscribeBars: (
     symbolInfo: BarsSymbolInfoProps,
     resolution: string,
@@ -159,9 +159,9 @@ export const Datafeed = (asset: FuturesAssetProps, ws: WS) => ({
         if (unsubscribe) unsubscribe();
         sockets.delete(`${symbolInfo.name}@kline_${timeframe}`);
       };
-    } catch (e) {}
+    } catch (e) { }
   },
-  unsubscribeBars: () => {},
+  unsubscribeBars: () => { },
   getMarks: () => ({}),
   getTimeScaleMarks: () => ({}),
   getServerTime: () => ({}),
