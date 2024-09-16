@@ -83,7 +83,7 @@ export const TokenInfo = ({ asset: assetBuffer, params }: TokenInfoProps) => {
 
   const pred_funding_rate =
     ((marketInfo?.last_funding_rate + marketInfo?.est_funding_rate) / 2) *
-      100 || 0;
+    100 || 0;
 
   const getColorFromChangePercentage = (
     percentage: string,
@@ -132,7 +132,7 @@ export const TokenInfo = ({ asset: assetBuffer, params }: TokenInfoProps) => {
         </Popover>
         <div className="flex items-center overflow-x-scroll no-scrollbar min-w-[800px]">
           <p
-            className={`${lastPriceInfo.price_color} transition-color duration-200 ease-in-out text-base sm:text-lg mr-4`}
+            className={`${lastPriceInfo.price_color} transition-color duration-200 ease-in-out text-base sm:text-lg mr-4 `}
           >
             {getFormattedAmount(marketInfo?.mark_price) || "Loading..."}
           </p>
@@ -168,7 +168,7 @@ export const TokenInfo = ({ asset: assetBuffer, params }: TokenInfoProps) => {
                 </Tooltip>
               </TooltipProvider>
               <p className="text-xs mt-1 text-white font-medium">
-                {marketInfo?.mark_price}
+                {getFormattedAmount(marketInfo?.mark_price)}
               </p>
             </div>
             {/* 
@@ -179,7 +179,7 @@ Used for margining, computing unrealized PnL, liquidations, and triggering TP/SL
             <div>
               <p className="text-xs text-font-60">Index</p>
               <p className="text-xs mt-1 text-white font-medium">
-                {marketInfo?.index_price}
+                {getFormattedAmount(marketInfo?.index_price)}
               </p>
             </div>
             <div className="relative">
