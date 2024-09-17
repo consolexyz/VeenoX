@@ -31,8 +31,14 @@ export enum AccountStatusEnum {
 export const ConnectWallet = () => {
   const [isCopied, setIsCopied] = useState(false);
   const { account } = useOrderlyAccount();
-  const { address, isDisconnected, isConnecting, chainId, connector } =
-    useAccount();
+  const {
+    address,
+    isDisconnected,
+    isConnecting,
+    isConnected,
+    chainId,
+    connector,
+  } = useAccount();
   const [isActive, setIsActive] = useState(0);
   const { connect, connectors, isPending, isError, isSuccess, data } =
     useConnect();
@@ -149,7 +155,10 @@ export const ConnectWallet = () => {
           <Popover open={isDisconnectOpen}>
             <PopoverTrigger
               className="h-full min-w-fit"
-              onClick={() => setIsDisconnectOpen((prev) => !prev)}
+              onClick={() => {
+                if (isConnected) setIsDisconnectOpen((prev) => !prev);
+                else setIsWalletConnectorOpen(true);
+              }}
             >
               <div
                 className="text-white bg-base_color border border-borderColor-DARK text-bold font-poppins text-xs

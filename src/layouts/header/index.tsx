@@ -6,7 +6,10 @@ import {
   getImageFromChainId,
   supportedChains,
 } from "@/utils/network";
-import { useAccount as useOrderlyAccount } from "@orderly.network/hooks";
+import {
+  useAccountInstance,
+  useAccount as useOrderlyAccount,
+} from "@orderly.network/hooks";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -93,18 +96,11 @@ export const Header = () => {
   //   disconnect();
   // };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(address || "");
-    setIsCopied(true);
-    setTimeout(() => {
-      setIsCopied(false);
-    }, 2000);
-  };
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const { switchChain } = useSwitchChain();
   const { isDeposit } = useGeneralContext();
-  console.log("chainId", chainId);
+  const accountInstance = useAccountInstance();
   const chainLogo =
     supportedChains.find((entry) => entry.label === (chain?.name as string))
       ?.icon || getImageFromChainId(chainId as ChainsImageType);
@@ -112,25 +108,32 @@ export const Header = () => {
   return (
     <header className="flex items-center justify-between h-[60px] px-2.5 border-b border-borderColor">
       <div className="flex items-center gap-5">
-        <Link href="/">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <Link href="/">
             <img
               src="/veenox/veenox-text.png"
               alt="Veeno Logo"
               className="h-[30px] w-auto max-w-auto max-h-[25px] sm:max-w-auto sm:max-h-[30px]"
             />
-
-            <nav className="ml-5 h-full hidden lg:flex">
-              <ul className="text-white text-medium text-sm flex items-center gap-5 h-full">
-                <li>Trade</li>
-                <li>Dashboard</li>
-                <li>Portfolio</li>
-                <li>Swap</li>
-                <li>Learn Trading & Earn</li>
-              </ul>
-            </nav>
-          </div>{" "}
-        </Link>
+          </Link>
+          <nav className="ml-5 h-full hidden lg:flex">
+            <ul className="text-white text-medium text-sm flex items-center gap-5 h-full">
+              <li>
+                <Link href="/perp/PERP_BTC_USDC">Trade</Link>
+              </li>
+              <li>
+                {" "}
+                <Link href="/dashboard">Dashboard</Link>
+              </li>
+              <li className="text-font-40 cursor-not-allowed">Portfolio</li>
+              <li className="text-font-40 cursor-not-allowed">Swap</li>
+              <li className="text-font-40 cursor-not-allowed">Bridge</li>
+              <li className="text-font-40 cursor-not-allowed">
+                Learn Trading & Earn
+              </li>
+            </ul>
+          </nav>
+        </div>{" "}
       </div>
       <div className="flex items-center gap-5">
         <div className="flex relative w-fit h-fit">
@@ -169,11 +172,12 @@ export const Header = () => {
                         }
                       }}
                       onMouseLeave={() => setIsHoverChain(null)}
-                      onClick={() =>
+                      onClick={() => {
+                        accountInstance.switchChainId(supportedChain.chainId);
                         switchChain({
-                          chainId: parseInt(supportedChain.id, 16),
-                        })
-                      }
+                          chainId: supportedChain.chainId,
+                        });
+                      }}
                     >
                       <div
                         className={`h-10 w-10 ${

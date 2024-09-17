@@ -10,7 +10,7 @@ type ToastType = {
 
 export const triggerAlert = (type: TypeProps, text: string) => {
   const Msg = () => (
-    <div className="flex flex-col items-start text-white text-sm font-bold  w-full h-full pb-1 pl-1">
+    <div className="flex flex-col items-start text-white text-sm font-bold w-full h-full pb-1 pl-1">
       <p className="text-[15px]">{type}</p>
       <p className="text-sm text-font-60 font-medium mt-1">{text}</p>
     </div>

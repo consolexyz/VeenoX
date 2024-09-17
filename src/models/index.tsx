@@ -144,3 +144,12 @@ export type Inputs = {
   tp_trigger_price?: string;
   sl_trigger_price?: string;
 };
+
+export interface MaintenanceType {
+  status: number;
+  msg: string;
+  scheduled_maintenance: {
+    startTime: number;
+    endTime: number;
+  } | null;
+}

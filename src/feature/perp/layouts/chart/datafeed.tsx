@@ -4,9 +4,12 @@ import {
   CustomBarProps,
   FuturesAssetProps,
 } from "@/models";
-import { getNextBarTime, resolutionToTimeframe } from "@/utils/misc";
+import {
+  formatSymbol,
+  getNextBarTime,
+  resolutionToTimeframe,
+} from "@/utils/misc";
 import { WS } from "@orderly.network/net";
-import { Dispatch, SetStateAction } from "react";
 
 export const supportedResolutions = [
   "1",
@@ -25,18 +28,14 @@ const sockets = new Map<string, WS>();
 const lastBarsCache = new Map();
 const initialDataLoadedMap: Record<string, boolean> = {};
 
-export const Datafeed = (
-  asset: FuturesAssetProps,
-  ws: WS,
-  setIsChartLoading: Dispatch<SetStateAction<boolean>>
-) => ({
+export const Datafeed = (asset: FuturesAssetProps, ws: WS) => ({
   onReady: (callback: Function) => {
     callback({ supported_resolutions: supportedResolutions });
   },
   resolveSymbol: (symbolName: string, onResolve: Function) => {
     const price = asset?.mark_price || 1;
     const params = {
-      name: symbolName,
+      name: formatSymbol(asset?.symbol),
       description: "",
       type: "crypto",
       session: "24x7",
@@ -49,7 +48,7 @@ export const Datafeed = (
       has_intraday: true,
       intraday_multipliers: ["1", "5", "15", "30", "60"],
       supported_resolution: supportedResolutions,
-      volume_precision: 8,
+      volume_precision: 2,
       data_status: "streaming",
     };
     onResolve(params);

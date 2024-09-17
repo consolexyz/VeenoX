@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 export const ENABLED_FEATURES = ["show_spread_operators"
 ];
+=======
+export const ENABLED_FEATURES = ["show_spread_operators", "header_resolutions"];
+>>>>>>> origin/master
 
 export const DISABLED_FEATURES = [
   "header_compare",

@@ -1,10 +1,4 @@
 import { useGeneralContext } from "@/context";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/lib/shadcn/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/lib/shadcn/popover";
 import { triggerAlert } from "@/lib/toaster";
 import { Inputs } from "@/models";
@@ -16,16 +10,21 @@ import {
   useSymbolsInfo,
 } from "@orderly.network/hooks";
 import { OrderEntity, OrderSide, OrderStatus } from "@orderly.network/types";
+import { useParams } from "next/navigation";
 import { useState } from "react";
-import { IoChevronDown } from "react-icons/io5";
 import { Oval } from "react-loader-spinner";
 
-export const EditModal = () => {
+type EditModalType = {
+  order: OrderEntity | any;
+};
+
+export const EditModal = ({ order }: EditModalType) => {
   const [activePnlOrOffset, setActivePnlOrOffset] = useState("$");
   const [error, setError] = useState([""]);
+  const params = useParams();
   const [loading, setLoading] = useState(false);
   const {
-    editPendingPositionOpen: order,
+    editPendingPositionOpen,
     setEditPendingPositionOpen,
     setOrderPositions,
   } = useGeneralContext();
@@ -99,24 +98,39 @@ export const EditModal = () => {
       triggerAlert("Error", JSON.stringify(e));
     }
   };
-
   return (
-    <Dialog open={order}>
-      <DialogContent
-        close={() => setEditPendingPositionOpen(null)}
-        className="max-w-[440px] w-[90%] h-auto max-h-auto flex flex-col gap-0"
+    <Popover open={editPendingPositionOpen?.order_id === order?.order_id}>
+      <PopoverTrigger
+        className="h-full min-w-fit"
+        onClick={() => {
+          if (
+            !editPendingPositionOpen &&
+            editPendingPositionOpen?.order_id !== order?.order_id
+          ) {
+            setEditPendingPositionOpen(() => order);
+            setOrderPositions([]);
+          } else setEditPendingPositionOpen(null);
+        }}
       >
-        <DialogHeader>
-          <DialogHeader>
-            <DialogTitle className="pb-5">Edit Position</DialogTitle>
-          </DialogHeader>
-        </DialogHeader>
-        <p className="text-sm text-white mb-2 ">Price:</p>
+        <button
+          className="text-white bg-terciary border border-base_color text-bold font-poppins text-xs
+              h-[25px] px-2 rounded flex items-center
+          "
+        >
+          Edit
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        sideOffset={4}
+        align="center"
+        onInteractOutside={() => setEditPendingPositionOpen(null)}
+        className="flex flex-col p-2.5 z-[102] w-[200px] whitespace-nowrap bg-secondary border border-borderColor shadow-xl"
+      >
         <div className="flex items-center justify-between gap-2">
-          <div className="flex px-2.5 w-full items-center bg-terciary border border-borderColor rounded h-[35px] text-sm">
+          <div className="flex px-1.5 w-full items-center bg-terciary border border-borderColor rounded h-[30px] text-sm">
             <input
               type="number"
-              className="h-full w-full"
+              className="h-full w-full text-white"
               placeholder="Price"
               value={(values.price as any).toString()}
               onChange={(e) => {
@@ -124,54 +138,17 @@ export const EditModal = () => {
               }}
             />
           </div>
-          <div className="flex pl-2.5 items-center bg-terciary border border-borderColor rounded h-[35px] text-sm">
-            <input
-              type="number"
-              className={`h-full w-full`}
-              placeholder="Loss"
-            />
-            <Popover>
-              <PopoverTrigger className="h-full min-w-fit">
-                <div className="w-fit px-2.5 h-full flex items-center justify-center ">
-                  <p>{activePnlOrOffset}</p>
-                  <IoChevronDown className="ml-1" />
-                </div>
-              </PopoverTrigger>
-              <PopoverContent
-                sideOffset={0}
-                className="md:transform-x-[10px] flex flex-col w-fit p-2.5  bg-secondary border border-borderColor shadow-2xl "
-              >
-                <button
-                  onClick={() => setActivePnlOrOffset("$")}
-                  className="text-sm text-white mb-1"
-                >
-                  $
-                </button>
-                <button
-                  onClick={() => setActivePnlOrOffset("%")}
-                  className="text-sm text-white"
-                >
-                  %
-                </button>
-              </PopoverContent>
-            </Popover>
-          </div>
         </div>
-        {error && error.find((entry) => entry.includes("SL")) ? (
-          <p className="text-xs text-red mt-2">
-            {error.find((entry) => entry.includes("SL"))}
-          </p>
-        ) : null}
-        <div className="flex items-center w-full gap-2.5 mt-5">
+        <div className="flex items-center w-full gap-2.5 mt-2.5">
           <button
-            className="border-base_color border w-full rounded flex items-center justify-center h-[40px] text-sm text-white"
-            onClick={onEdit}
+            className="border-base_color border w-full rounded flex items-center justify-center h-[30px] text-xs text-white"
+            onClick={() => onEdit()}
           >
             {loading && (
               <Oval
                 visible={true}
-                height="18"
-                width="18"
+                height="16"
+                width="16"
                 color="#FFF"
                 secondaryColor="rgba(255,255,255,0.6)"
                 ariaLabel="oval-loading"
@@ -183,11 +160,17 @@ export const EditModal = () => {
                 wrapperClass=""
               />
             )}
-            Edit position
+            Edit
+          </button>
+          <button
+            className="border-base_color border w-full rounded flex items-center justify-center h-[30px] text-xs text-white"
+            onClick={() => setEditPendingPositionOpen(null)}
+          >
+            Cancel
           </button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 };
 

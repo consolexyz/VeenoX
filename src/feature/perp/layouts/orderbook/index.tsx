@@ -1,9 +1,13 @@
+import { Loader } from "@/components/loader";
 import { useGeneralContext } from "@/context";
 import { Popover, PopoverContent, PopoverTrigger } from "@/lib/shadcn/popover";
 import { FuturesAssetProps, TradeExtension } from "@/models";
 import { cn } from "@/utils/cn";
-import { formatSymbol } from "@/utils/misc";
-import { getFormattedAmount, getStyleFromDevice } from "@/utils/misc";
+import {
+  formatSymbol,
+  getFormattedAmount,
+  getStyleFromDevice,
+} from "@/utils/misc";
 import {
   useMarketTradeStream,
   useOrderbookStream,
@@ -11,7 +15,7 @@ import {
 import { useRef, useState } from "react";
 import { IoChevronDown } from "react-icons/io5";
 import { TradeSection } from "./trade-section";
-1
+1;
 enum OrderbookSection {
   ORDERBOOK,
   TRADE_HISTORY,
@@ -37,18 +41,20 @@ export const Orderbook = ({
     OrderbookSection.ORDERBOOK
   );
 
+  const exepectedOrderbookLength =
+    isMobileOpenTrade || isMobile
+      ? 8
+      : (sectionRef?.current?.clientHeight as number) > 950
+      ? 18
+      : (sectionRef?.current?.clientHeight as number) > 900
+      ? 16
+      : (sectionRef?.current?.clientHeight as number) > 800
+      ? 14
+      : 12;
+
   const [data, { isLoading, onDepthChange, depth, allDepths }] =
     useOrderbookStream(asset?.symbol, undefined, {
-      level:
-        isMobileOpenTrade || isMobile
-          ? 8
-          : (sectionRef?.current?.clientHeight as number) > 950
-            ? 18
-            : (sectionRef?.current?.clientHeight as number) > 900
-              ? 16
-              : (sectionRef?.current?.clientHeight as number) > 800
-                ? 14
-                : 12,
+      level: exepectedOrderbookLength,
       padding: false,
     });
   const bestBid: number | undefined = (data?.bids as [number[]])[0]?.[0];
@@ -77,11 +83,31 @@ export const Orderbook = ({
     asset?.symbol
   );
 
+  const getBidsOrAsks = (type: "bids" | "asks") => {
+    if (!data?.[type] || !Array.isArray(data[type])) {
+      return Array(exepectedOrderbookLength).fill(["--", "--", "--", "--"]);
+    }
+
+    const orders = [...data[type]];
+    const missingEntries = exepectedOrderbookLength - orders.length;
+
+    if (missingEntries > 0) {
+      const fillerOrders = Array(missingEntries).fill(["--", "--", "--", "--"]);
+      return [...orders, ...fillerOrders];
+    }
+
+    return orders.slice(0, exepectedOrderbookLength);
+  };
+
+  const bids = getBidsOrAsks("bids");
+  const asks = getBidsOrAsks("asks");
+
   return (
     <section
       ref={sectionRef}
-      className={`w-full md:max-h-full ${isMobileOpenTrade ? "h-auto max-h-full" : "h-[450px] max-h-[450px]"
-        } md:h-full  overflow-y-hidden md:min-w-[250px] `}
+      className={`w-full md:max-h-full ${
+        isMobileOpenTrade ? "h-auto max-h-full" : "h-[450px] max-h-[450px]"
+      } md:h-full  overflow-y-hidden md:min-w-[250px] `}
     >
       {isMobileOpenTrade || isMobile ? null : (
         <>
@@ -101,8 +127,9 @@ export const Orderbook = ({
           </div>
           <div className="bg-terciary h-[1px] w-full relative">
             <div
-              className={`h-[1px] w-1/2 bottom-0 transition-all duration-200 ease-in-out bg-font-80 absolute ${!activeSection ? "left-0" : "left-1/2"
-                }`}
+              className={`h-[1px] w-1/2 bottom-0 transition-all duration-200 ease-in-out bg-font-80 absolute ${
+                !activeSection ? "left-0" : "left-1/2"
+              }`}
             />
           </div>
         </>
@@ -129,8 +156,9 @@ export const Orderbook = ({
                   onClick={() => {
                     if (onDepthChange) onDepthChange(entry);
                   }}
-                  className={`h-[22px] ${depth === entry ? "text-base_color font-bold" : "text-white"
-                    } w-fit px-1 text-xs`}
+                  className={`h-[22px] ${
+                    depth === entry ? "text-base_color font-bold" : "text-white"
+                  } w-fit px-1 text-xs`}
                 >
                   {entry}
                 </button>
@@ -141,15 +169,16 @@ export const Orderbook = ({
       )}
       {(activeSection === OrderbookSection.ORDERBOOK &&
         (mobileActiveSection === "Orderbook" || !mobileActiveSection)) ||
-        isMobileOpenTrade ? (
+      isMobileOpenTrade ? (
         <div
           // max-h-[670px]  overflow-y-scroll
-          className={`relative h-full md:h-calc-full-button ${isMobileOpenTrade ? "min-w-[140px] w-full" : "w-auto"
-            }  sm:w-auto`}
+          className={`relative h-full md:h-calc-full-button ${
+            isMobileOpenTrade ? "min-w-[140px] w-full" : "w-auto"
+          }  sm:w-auto`}
         >
           {!data?.asks?.length && !data?.bids?.length ? (
             <div className="w-full h-full flex items-center justify-center">
-              <img src="/loader/loader.gif" className="w-[150px]" />
+              <Loader />
             </div>
           ) : (
             <table className="w-full h-calc-full-market">
@@ -159,20 +188,26 @@ export const Orderbook = ({
                   {isMobileOpenTrade ? null : (
                     <th className="text-end font-normal">Size</th>
                   )}
-                  <th className="pr-2.5 text-end font-normal"></th>
+                  <th className="pr-2.5 text-end font-normal">
+                    Total {formatSymbol(asset?.symbol, true)}
+                  </th>
                   {isMobileOpenTrade ? null : (
-                    <th className="pr-2.5 text-end font-normal">   Total {formatSymbol(asset?.symbol, true)}</th>
+                    <th className="pr-2.5 text-end font-normal"> Total $</th>
                   )}
                 </tr>
               </thead>
               <tbody>
-                {(data?.asks || [])?.map((ask: number[], i: number) => {
+                {(asks || [])?.map((ask: number[], i: number) => {
                   return (
                     <tr key={i} className="text-font-80 text-xs relative">
                       {Array.from({ length: 4 }).map((_, j) => {
                         const className = getStyleFromDevice(j, "");
                         const value =
-                          j === 0 ? ask[j] : getFormattedAmount(ask[j]);
+                          j === 0
+                            ? ask[j]
+                            : typeof ask[j] === "number"
+                            ? getFormattedAmount(ask[j])
+                            : ask[j];
                         if (isMobileOpenTrade && (j === 0 || j === 2))
                           return (
                             <td
@@ -225,13 +260,17 @@ export const Orderbook = ({
                     </div>
                   </td>
                 </tr>
-                {(data?.bids || []).map((bid: number[], i: number) => {
+                {(bids || []).map((bid: number[], i: number) => {
                   return (
                     <tr key={i} className="text-font-80 text-xs relative">
                       {Array.from({ length: 4 }).map((_, j) => {
                         const className = getStyleFromDevice(j, "");
                         const value =
-                          j === 0 ? bid[j] : getFormattedAmount(bid[j]);
+                          j === 0
+                            ? bid[j]
+                            : typeof bid[j] === "number"
+                            ? getFormattedAmount(bid[j])
+                            : bid[j];
                         if (isMobileOpenTrade && (j === 0 || j === 2))
                           return (
                             <td

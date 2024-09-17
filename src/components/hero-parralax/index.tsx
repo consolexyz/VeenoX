@@ -16,17 +16,17 @@ export const HeroParallax = () => {
   const ref = React.useRef(null);
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start start", "end start"],
+    offset: ["0 0", "1.2 1"],
   });
 
   const springConfig = { stiffness: 300, damping: 30, bounce: 100 };
 
   const translateX = useSpring(
-    useTransform(scrollYProgress, [0, 1], [0, 1000]),
+    useTransform(scrollYProgress, [0, 1], [0, 500]),
     springConfig
   );
   const translateXReverse = useSpring(
-    useTransform(scrollYProgress, [0, 1], [0, -1000]),
+    useTransform(scrollYProgress, [0, 1], [0, -500]),
     springConfig
   );
   const rotateX = useSpring(
@@ -42,13 +42,13 @@ export const HeroParallax = () => {
     springConfig
   );
   const translateY = useSpring(
-    useTransform(scrollYProgress, [0, 0.25], [-700, 100]),
+    useTransform(scrollYProgress, [0, 0.25], [-700, -100]),
     springConfig
   );
   return (
     <div
       ref={ref}
-      className="h-[230vh] py-40 overflow-hidden  antialiased relative flex flex-col self-auto [perspective:1000px] [transform-style:preserve-3d]"
+      className="h-fit pt-[200px] pb-[50px] overflow-hidden bg-[#15171b] antialiased relative flex flex-col self-auto [perspective:1000px] [transform-style:preserve-3d]"
     >
       <Header assetsNumber={data?.length || 0} />
       <motion.div
@@ -167,7 +167,7 @@ export const AssetCard = ({
         y: -20,
       }}
       key={asset.title}
-      className="group/product h-[300px] w-[25rem] relative flex-shrink-0 overflox-hidden"
+      className="group/product h-[250px] w-[25rem] relative flex-shrink-0 overflox-hidden"
     >
       <Link
         href={"asset.url"}
@@ -175,11 +175,7 @@ export const AssetCard = ({
       >
         <div
           className="flex p-8 flex-col backdrop-filter backdrop-blur-lg w-[450px] bg-line bg-cover bg-center shadow-xl
-         shadow-[rgba(0,0,0,0.2)] rounded-[50px] border-2 border-borderColor-DARK object-cover object-left-top absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(45deg, rgba(43,47,54,1) 27%, #1B1D22 100%)",
-          }}
+         shadow-[rgba(0,0,0,0.2)] rounded-[40px] h-[260px] border-2 border-borderColor-DARK object-cover object-left-top absolute inset-0 "
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center w-full ">

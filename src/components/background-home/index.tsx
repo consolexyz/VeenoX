@@ -18,11 +18,11 @@ export const BackgroundBeamsWithCollision = ({
     <div
       ref={parentRef}
       className={cn(
-        "h-calc-full-header bg-gradient-to-b from-secondary to-secondary relative flex items-center w-full justify-center overflow-hidden",
+        "pt-[260px] pb-[200px] background relative flex items-center w-full justify-center overflow-hidden no-scrollbar ",
         className
       )}
     >
-    
+      <div className="sparkles"></div>
       {beams.map((beam) => (
         <CollisionMechanism
           key={beam.initialX + "beam-idx"}

@@ -83,7 +83,7 @@ export const TokenInfo = ({ asset: assetBuffer, params }: TokenInfoProps) => {
 
   const pred_funding_rate =
     ((marketInfo?.last_funding_rate + marketInfo?.est_funding_rate) / 2) *
-      100 || 0;
+    100 || 0;
 
   const getColorFromChangePercentage = (
     percentage: string,

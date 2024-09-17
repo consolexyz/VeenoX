@@ -1,5 +1,4 @@
-<img src="./public/logo/veeno.png" width="100" h="auto" alt="VeenoX Logo" />
-
+<img src="./public/veenox/veenox-text.png" width="150" h="auto" alt="VeenoX Logo" />
 <br />
 VeenoX is built using a modern tech stack comprising Next.js, Tailwind CSS, TypeScript and relies on npm for package management.
 <br />

@@ -1,15 +1,13 @@
 import { useGeneralContext } from "@/context";
-import { triggerAlert } from "@/lib/toaster";
 import { FuturesAssetProps } from "@/models";
 import { getFormattedAmount, getTokenPercentage } from "@/utils/misc";
 import {
-  useCollateral,
-  useOrderEntry,
+  useMarginRatio,
   useOrderStream,
   usePositionStream,
 } from "@orderly.network/hooks";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import { RenderCells } from "./components/render-cells";
 import { thead } from "./constants";
 
@@ -34,19 +32,11 @@ export const Position = ({ asset }: PositionProps) => {
     width: string;
     left: string;
   }>({ width: "20%", left: "0%" });
-  const [data, proxy, state] = usePositionStream();
-  const [orders, { cancelOrder }] = useOrderStream({ symbol: asset.symbol });
-  const {
-    totalCollateral,
-    freeCollateral: freeCollat,
-    totalValue,
-    availableBalance,
-    unsettledPnL,
-    positions,
-    accountInfo,
-  } = useCollateral({
-    dp: 2,
+  const [data] = usePositionStream();
+  const [orders, { cancelOrder, refresh }] = useOrderStream({
+    symbol: asset.symbol,
   });
+  const { currentLeverage } = useMarginRatio();
 
   useEffect(() => {
     if (!orderPositions?.length && (data?.rows?.length as number) > 0) {
@@ -71,53 +61,72 @@ export const Position = ({ asset }: PositionProps) => {
     return () => window.removeEventListener("resize", updateUnderline);
   }, [activeSection]);
 
-  const { onSubmit } = useOrderEntry(
-    {
-      symbol: asset.symbol,
-      side:
-        (data?.rows?.[0]?.position_qty as number) >= 0
-          ? "SELL"
-          : ("BUY" as any),
-      order_type: "MARKET" as any,
-      order_quantity: data.rows?.[0]?.position_qty,
-    },
-    { watchOrderbook: true }
-  );
-
   const closePendingOrder = async (id: number) => {
-    await cancelOrder(id, asset?.symbol);
-    triggerAlert("Success", "Pending order successfully closed");
+    const idToast = toast.loading("Closing Order");
+    try {
+      await cancelOrder(id, asset?.symbol);
+      toast.update(idToast, {
+        render: "Order closed",
+        type: "success",
+        isLoading: false,
+        autoClose: 2000,
+      });
+    } catch (error: any) {
+      toast.update(idToast, {
+        render: error?.message,
+        type: "error",
+        isLoading: false,
+        autoClose: 2000,
+      });
+    }
   };
 
   const filterSide = (entry: any) => {
-    if (activeSection === 1)
+    if (activeSection === Sections.PENDING) {
       return (
         entry.total_executed_quantity < entry.quantity &&
         entry.type === "LIMIT" &&
-        entry.status !== "COMPLETED" &&
-        entry.status !== "FILLED" &&
-        entry.status !== "CANCELLED"
+        (entry.status === "REPLACED" || entry.status === "NEW")
       );
+    } else if (activeSection === Sections.TP_SL) {
+      if (entry.algo_order_id) {
+        const tp = entry?.child_orders[0];
+        const sl = entry?.child_orders[1];
+        if (tp.algo_status === "FILLED" || sl.algo_status === "FILLED") {
+          return true;
+        }
+        return false;
+      }
+      return false;
+    } else if (activeSection === Sections.FILLED) {
+      const tp = entry?.child_orders?.[0];
+      const sl = entry?.child_orders?.[1];
+      if (
+        entry.status === "FILLED" ||
+        tp?.algo_status === "FILLED" ||
+        sl?.algo_status === "FILLED"
+      ) {
+        return true;
+      }
+      return false;
+    }
+
     return true;
   };
 
-  // const {
-  //   freeCollateral,
-  //   markPrice,
-  //   maxQty,
-  //   estLiqPrice,
-  //   estLeverage,
-  //   onSubmit,
-  //   helper: { calculate, validator },
-  // } = useOrderEntry(
-  //   {
-  //     symbol: asset.symbol,
-  //     side: .direction as OrderSide,
-  //     order_type: values.type as any,
-  //     order_quantity: values.quantity,
-  //   },
-  //   { watchOrderbook: true }
-  // );
+  // const [tt] = useOrderStream({
+  //   includes: [AlgoOrderRootType.TP_SL, AlgoOrderRootType.POSITIONAL_TP_SL],
+  // });
+
+  // const tpslOrder = findPositionTPSLFromOrders(orders, asset?.symbol);
+  // console.log("tt", tt, orders);
+  // if (tpslOrder) {
+  //   console.log("TP/SL order trouvé pour BTC-USDT:", tpslOrder);
+  //   console.log("Take Profit:", tpslOrder.tp_trigger_price);
+  //   console.log("Stop Loss:", tpslOrder.sl_trigger_price);
+  // } else {
+  //   console.log("Aucun ordre TP/SL trouvé pour BTC-USDT");
+  // }
 
   const getPnLChange = () => {
     const arr =
@@ -163,7 +172,7 @@ export const Position = ({ asset }: PositionProps) => {
   const noOrderMessage = getEmptyMessageFromActiveSection();
 
   return (
-    <div className="w-full">
+    <div className="w-full min-h-[320px] h-[320px] max-h-[320px]">
       <div className="w-full flex justify-between items-center border-b border-borderColor-DARK">
         <div className="flex items-center relative">
           {sections.map((section, index) => (
@@ -185,32 +194,35 @@ export const Position = ({ asset }: PositionProps) => {
         </div>
       </div>
       {activeSection === Sections.POSITION ? (
-        <div className="p-2.5 flex items-center gap-5">
-          {/* <p>unsettledPnL: {data?.aggregated.unsettledPnL}</p> */}
+        <div className="p-2.5 pt-3.5 flex items-center gap-5">
           <div>
-            <p className="text-xs text-font-60 mb-[3px]">Unreal. PnL</p>
-            <p
-              className={`text-base  font-medium ${
-                data?.aggregated.unrealPnL === 0
-                  ? "text-white"
-                  : data?.aggregated.unrealPnL > 0
-                  ? "text-green"
-                  : "text-red"
-              }`}
-            >
-              {getFormattedAmount(data?.aggregated.unrealPnL)} (
-              {getTokenPercentage(pnl_change)}%)
+            <p className="text-xs text-font-60 mb-[3px]">
+              Unreal. PnL :{" "}
+              <span
+                className={` ${
+                  data?.aggregated.unrealPnL < 0
+                    ? "text-red"
+                    : data?.aggregated.unrealPnL > 0
+                    ? "text-green"
+                    : "text-white"
+                } font-medium`}
+              >
+                {getFormattedAmount(data?.aggregated.unrealPnL)} (
+                {getTokenPercentage(pnl_change * currentLeverage)}%)
+              </span>
             </p>
           </div>
           <div>
-            <p className="text-xs text-font-60 mb-[3px]">Notional</p>
-            <p className="text-base text-white font-medium">
-              {getFormattedAmount(data?.aggregated.notional)}
+            <p className="text-xs text-font-60 mb-[3px]">
+              Notional :{" "}
+              <span className="text-white font-medium">
+                {getFormattedAmount(data?.aggregated.notional)}
+              </span>
             </p>
           </div>
         </div>
       ) : null}
-      <div className="overflow-x-scroll h-[300px] overflow-y-scroll w-full no-scrollbar">
+      <div className="overflow-x-scroll min-h-[200px] max-h-[250px] overflow-y-scroll w-full no-scrollbar">
         <table className="w-full ">
           <thead>
             <tr>
@@ -250,16 +262,9 @@ export const Position = ({ asset }: PositionProps) => {
                 return (
                   <tr
                     key={i}
-                    className="flex flex-col justify-center text-xs text-white items-center absolute h-[260px] left-1/2"
+                    className="flex flex-col justify-center text-xs text-white items-center absolute h-[80px] left-1/2"
                   >
-                    <div className="flex items-center justify-center w-full h-full">
-                      <Image
-                        src="/empty/no-result.svg"
-                        height={50}
-                        width={100}
-                        alt="Empty position image"
-                        className="mt-2"
-                      />
+                    <div className="flex flex-col items-center justify-center w-full h-full">
                       <p className="mt-2">{noOrderMessage}</p>{" "}
                     </div>
                   </tr>
@@ -271,21 +276,14 @@ export const Position = ({ asset }: PositionProps) => {
                     order={order}
                     activeSection={activeSection}
                     closePendingOrder={closePendingOrder}
+                    rows={data?.rows}
                   />
                 </tr>
               );
             })}
-            {(!orders?.length && activeSection !== Sections.POSITION) ||
-            (activeSection === Sections.POSITION && !data?.rows?.length) ? (
-              <tr className="flex flex-col justify-center text-xs text-white items-center absolute h-[260px] left-1/2">
+            {!orders?.length && activeSection !== Sections.POSITION ? (
+              <tr className="flex flex-col justify-center text-xs text-white items-center absolute h-[80px] left-1/2">
                 <div className="flex flex-col justify-center items-center">
-                  <Image
-                    src="/empty/no-result.svg"
-                    height={50}
-                    width={100}
-                    alt="Empty position image"
-                    className="mt-2"
-                  />
                   <p className="mt-2">{noOrderMessage}</p>{" "}
                 </div>
               </tr>

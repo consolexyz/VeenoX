@@ -1,9 +1,9 @@
 "use client";
 import { useGeneralContext } from "@/context";
 import { EnableTrading } from "@/layouts/enable-trading";
+import { MaintenanceStatusModal } from "@/modals/maintenance";
 import { FavoriteProps, FuturesAssetProps } from "@/models";
 import {
-  useCollateral,
   useHoldingStream,
   useMarkets,
   useWalletConnector,
@@ -44,17 +44,16 @@ export const Perp = ({ asset }: PerpProps) => {
   const { usdc } = useHoldingStream();
   const orderbookRef = useRef<HTMLDivElement>(null);
   const useParam = useParams();
-  const {
-    totalCollateral,
-    freeCollateral: freeCollat,
-    totalValue,
-    availableBalance,
-    unsettledPnL,
-    positions,
-    accountInfo,
-  } = useCollateral({
-    dp: 2,
-  });
+  const [topHeightPx, setTopHeightPx] = useState(0);
+
+  const calculateInitialHeight = () => {
+    return Math.round(window.innerHeight * 0.7);
+  };
+
+  useEffect(() => {
+    setTopHeightPx(calculateInitialHeight());
+  }, []);
+
   const [
     data,
     {
@@ -103,33 +102,27 @@ export const Perp = ({ asset }: PerpProps) => {
   const handleMouse = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (window.innerWidth < 1268) return;
     const startY = e.clientY;
-    const containerHeight = (
-      containerRef.current as HTMLDivElement
-    ).getBoundingClientRect().height;
-    const startTopHeight = (topHeight / 100) * containerHeight;
+    const startTopHeight = topHeightPx;
 
     const handleMouseMove = (e: MouseEvent) => {
       const deltaY = e.clientY - startY;
       const newTopHeight = startTopHeight + deltaY;
-      const newTopHeightPercent = (newTopHeight / containerHeight) * 100;
-      let rowUpHeight = rowUpRef.current?.clientHeight || 0;
+      const containerHeight =
+        containerRef.current?.clientHeight || window.innerHeight;
 
-      if (rowUpHeight > 720) {
-        setTopHeight(Math.max(Math.min(newTopHeightPercent, 90), 10));
-      } else {
-        const isMovingDown = deltaY > 0;
-        if (isMovingDown)
-          setTopHeight(Math.max(Math.min(newTopHeightPercent, 90), 10));
-      }
+      const minHeight = Math.round(containerHeight * 0.55);
+      const maxHeight = Math.round(containerHeight * 0.9);
+
+      setTopHeightPx(Math.max(Math.min(newTopHeight, maxHeight), minHeight));
     };
 
     const handleMouseUp = () => {
-      (chartRef?.current as any).style.pointerEvents = "auto";
+      if (chartRef.current) chartRef.current.style.pointerEvents = "auto";
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
 
-    (chartRef?.current as any).style.pointerEvents = "none";
+    if (chartRef.current) chartRef.current.style.pointerEvents = "none";
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
   };
@@ -144,13 +137,18 @@ export const Perp = ({ asset }: PerpProps) => {
       } else {
         setColWidths([8, 2]);
       }
+      setTopHeightPx((prevHeight) => {
+        const minHeight = Math.round(window.innerHeight * 0.6);
+        const maxHeight = Math.round(window.innerHeight * 0.9);
+        return Math.min(Math.max(prevHeight, minHeight), maxHeight);
+      });
     };
 
     window.addEventListener("resize", handleResize);
     handleResize();
 
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [topHeightPx]);
 
   const [widths, setWidths] = useState([90, 10]);
   const resizerRef = useRef(null);
@@ -191,9 +189,8 @@ export const Perp = ({ asset }: PerpProps) => {
   };
 
   return (
-    <div ref={containerRef} className="container  w-full max-w-full">
+    <div ref={containerRef} className="container w-full max-w-full pb-[35px]">
       <EnableTrading />
-      {/* <AdvancedChart symbol={asset?.symbol} /> */}
       <div className="w-full flex h-full">
         <div
           style={{
@@ -202,9 +199,12 @@ export const Perp = ({ asset }: PerpProps) => {
         >
           <div
             ref={rowUpRef}
-            className="relative w-full border-b border-borderColor topPane md:flex-grow "
+            className="relative w-full  border-b border-borderColor topPane md:flex-grow "
             style={{
-              height: `${window.innerWidth < 1168 ? "auto" : topHeight}%`,
+              height: `${
+                window.innerWidth < 1168 ? "auto" : `${topHeightPx}px`
+              }`,
+              minHeight: `${window.innerWidth < 1168 ? "auto" : "20vh"}`,
               zIndex: 1,
             }}
           >
@@ -259,7 +259,7 @@ export const Perp = ({ asset }: PerpProps) => {
                 )}
               </div>
               <div
-                className="hidden md:block h-full relative"
+                className="hidden md:block h-full relative border-r border-borderColor"
                 ref={orderbookRef}
               >
                 <Orderbook asset={asset} />{" "}
@@ -277,17 +277,22 @@ export const Perp = ({ asset }: PerpProps) => {
               </div>
             </div>
           </div>
-          <div className="resizerY hidden md:flex" onMouseDown={handleMouse} />
-          <div className=" w-full h-auto bottomPane">
-            <div className="overflow-x-hidden no-scrollbar">
-              <Position asset={asset} />
-            </div>
+          <div className="border-r border-borderColor">
+            <div
+              className="resizerY hidden md:flex"
+              onMouseDown={handleMouse}
+            />
+            <div className=" w-full min-h-[350px] h-[350px] ">
+              <div className="no-scrollbar">
+                <Position asset={asset} />
+              </div>
+            </div>{" "}
           </div>
         </div>
 
         <div
           style={{ width: `${widths[1]}%` }}
-          className="hidden md:block h-full min-w-[300px] max-w-[500px]  border-l relative border-borderColor "
+          className="hidden md:block h-full min-w-[300px] max-w-[500px] relative min-h-screen "
         >
           {window.innerWidth >= 1268 && (
             <div
@@ -300,7 +305,7 @@ export const Perp = ({ asset }: PerpProps) => {
           <OpenTrade asset={asset} holding={usdc?.holding} />
         </div>
       </div>
-
+      <MaintenanceStatusModal />
       <MobileOpenTrade asset={asset} holding={usdc?.holding} />
     </div>
   );

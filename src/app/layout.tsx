@@ -1,5 +1,5 @@
+import { DynamicHeader } from "@/layouts/dynamic-header";
 import { Footer } from "@/layouts/footer";
-import { Header } from "@/layouts/header";
 import { config } from "@/lib/wallet-connect/config";
 import WagmiProvider from "@/lib/wallet-connect/provider";
 import { Providers } from "@/provider/wrapper";
@@ -37,9 +37,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const initialState = cookieToInitialState(config, headers().get("cookie"));
+  const headersList = headers();
+  const isHomePage = headersList.get("x-is-home-page") === "true";
   return (
     <html lang="en">
       <head>
+        <title>VEENO X</title>
+        <meta
+          name="description"
+          content="VeenoX is a cutting-edge perpetual decentralized exchange (DEX) built on the Orderly Network and powered by Monad technology. We offer traders the lowest fees in the market without compromising on essential features. Our unique 'Learn Trading & Earn' program empowers users to enhance their trading skills while earning rewards, creating an educational and profitable experience. At VeenoX, we're committed to revolutionizing decentralized finance by providing a secure, efficient, and user-friendly platform for both novice and experienced traders. Join us in shaping the future of DeFi trading."
+        />
         <link
           href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap"
           rel="stylesheet"
@@ -64,7 +71,7 @@ export default function RootLayout({
                 zIndex={1600}
                 showAtBottom={false}
               />
-              <Header />
+              <DynamicHeader />
               {children}
               <SpeedInsights />
               <Footer />

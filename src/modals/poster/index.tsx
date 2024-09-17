@@ -1,9 +1,11 @@
+import { Loader } from "@/components/loader";
 import { Dialog, DialogContent, DialogTrigger } from "@/lib/shadcn/dialog";
 import {
   formatSymbol,
   getFormattedAmount,
   getFormattedDate,
 } from "@/utils/misc";
+import { useMarginRatio } from "@orderly.network/hooks";
 import { useEffect, useRef, useState } from "react";
 import { FaShareAlt } from "react-icons/fa";
 
@@ -25,6 +27,8 @@ export const PosterModal = ({ order }: any) => {
     amount: order.position_qty,
     unrealized_pnl: order.unrealized_pnl,
   };
+
+  const { currentLeverage } = useMarginRatio();
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -91,7 +95,7 @@ export const PosterModal = ({ order }: any) => {
 
       ctx.fillStyle = "rgb(255,255,255)";
       ctx.fillText(
-        `${data.leverage}X`,
+        `${Math.round(currentLeverage)}X`,
         50 + sideWidth + pipeWidth1 + symbolWidth + pipeWidth2,
         100
       );
@@ -119,7 +123,9 @@ export const PosterModal = ({ order }: any) => {
           `${Number(pnlPercentage) > 0 ? "+" : ""}${
             pnlDisplay === "PnL"
               ? `${pnl}$`
-              : `${(Number(pnlPercentage) * 47).toFixed(2)}%`
+              : `${(Number(pnlPercentage) * (currentLeverage || 1)).toFixed(
+                  2
+                )}%`
           }`,
           baseX,
           baseY
@@ -273,11 +279,11 @@ export const PosterModal = ({ order }: any) => {
     <Dialog>
       <DialogTrigger>
         <button>
-          <FaShareAlt className="text-white text-sm" />
+          <FaShareAlt className="text-font-60 text-xs -mb-[1px]" />
         </button>
       </DialogTrigger>
       <DialogContent
-        className="max-w-[1050px] w-[90%] h-auto max-h-[90vh] flex flex-col gap-0 overflow-auto"
+        className="max-w-[1050px] w-[90%] h-auto max-h-[90vh] flex flex-col gap-0 overflow-auto no-scrollbar"
         close={() => {}}
       >
         <div className="flex flex-col">
@@ -293,16 +299,16 @@ export const PosterModal = ({ order }: any) => {
                 />
               ) : (
                 <div className="max-w-[760px] w-[760px] h-[427px] bg-[#1B1D22] rounded-lg flex items-center justify-center">
-                  <img
+                  {/* <img
                     src={"/loader/loader.gif"}
                     alt="Generated Trading Poster"
                     style={{ maxWidth: "100px", height: "auto" }}
                     className="rounded-lg"
-                  />
+                  /> */}
+                  <Loader className="w-[70px]" />
                 </div>
               )}
             </div>
-
             <div className="flex flex-col ml-5">
               <p>PnL display:</p>
               <div className="flex items-center gap-3">

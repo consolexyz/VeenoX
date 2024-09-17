@@ -10,6 +10,7 @@ import { supportedChainIds } from "@/utils/network";
 import {
   useChains,
   useDeposit,
+  useHoldingStream,
   useAccount as useOrderlyAccount,
   useWalletConnector,
   useWithdraw,
@@ -24,10 +25,9 @@ import { TemplateDisplay } from "./components/template-display";
 
 export const Deposit = () => {
   const { connectedChain } = useWalletConnector();
-  const { address, chainId, chain } = useAccount();
-  const { state } = useOrderlyAccount();
+  const { address, chainId, chain, connector } = useAccount();
+  const { state, account } = useOrderlyAccount();
   const [amount, setAmount] = useState<FixedNumber>();
-  const [open, setOpen] = useState(false); // Manage popup state
   const [disabled, setDisabled] = useState(true);
   const [mintedTestUSDC, setMintedTestUSDC] = useState(false);
   const [newWalletBalance, setNewWalletBalance] = useState<FixedNumber>();
@@ -36,8 +36,15 @@ export const Deposit = () => {
     useState<boolean>(false);
   const [isDepositSuccess, setIsDepositSuccess] = useState(false);
   const [isWithdrawSuccess, setIsWithdrawSuccess] = useState(false);
-  const { setIsWalletConnectorOpen, isDeposit, setIsDeposit } =
-    useGeneralContext();
+  const {
+    setIsWalletConnectorOpen,
+    isDeposit,
+    setIsDeposit,
+    openWithdraw,
+    setOpenWithdraw,
+    setDepositAmount,
+    setIsEnableTradingModalOpen,
+  } = useGeneralContext();
   const networkIdSupported = [42161, 421614, 8453, 84532, 10, 11155420];
   const isSupportedChain = networkIdSupported.includes(chainId as number);
 
@@ -77,12 +84,11 @@ export const Deposit = () => {
     srcToken: token?.symbol,
     srcChainId: Number(chainId),
   });
+  const { usdc } = useHoldingStream();
+
   const { switchChain } = useSwitchChain();
+
   const handleClick = async () => {
-    if (unsettledPnL !== 0) {
-      triggerAlert("Error", "Settle PnL first.");
-      return;
-    }
     if (isSupportedChain) {
       if (isDeposit) {
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
@@ -110,17 +116,19 @@ export const Deposit = () => {
             await deposit();
             setIsDepositSuccess(true);
             setIsApprovalDepositLoading(false);
+            // @ts-ignore
+            setDepositAmount(usdc?.holding);
             setAmount(undefined);
             setNewWalletBalance(undefined);
             setNewOrderlyBalance(undefined);
             setTimeout(() => {
-              setOpen(false);
+              setOpenWithdraw(false);
               setTimeout(() => {
                 setIsDepositSuccess(false);
               }, 1000);
               triggerAlert(
-                "Information",
-                "Deposit is processing... Your funds will appear in your VeenoX account shortly. "
+                "Success",
+                "Successfully deposited. Your funds will appear in your VeenoX account shortly. "
               );
             }, 2000);
           } catch (err) {
@@ -129,6 +137,10 @@ export const Deposit = () => {
           }
         }
       } else {
+        if (unsettledPnL > 1 || unsettledPnL < -1) {
+          triggerAlert("Error", "Settle PnL first.");
+          return;
+        }
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
           triggerAlert("Error", "Invalid amount.");
           return;
@@ -146,13 +158,11 @@ export const Deposit = () => {
             setNewWalletBalance(undefined);
             setNewOrderlyBalance(undefined);
             setTimeout(() => {
-              setOpen(false);
-              setTimeout(() => {
-                setIsWithdrawSuccess(false);
-              }, 1000);
+              setOpenWithdraw(false);
+              setIsWithdrawSuccess(false);
               triggerAlert(
-                "Information",
-                "Withdrawal is processing... Your funds will appear in your wallet shortly."
+                "Success",
+                "Successfully withdraw. Your funds will appear in your wallet shortly."
               );
             }, 2000);
           }
@@ -161,13 +171,14 @@ export const Deposit = () => {
         }
       }
     } else {
-      switchChain({ chainId: 42161 }); // Default switch to Arbitrum
+      switchChain({ chainId: 42161 });
     }
   };
 
   const getButtonState = (): string => {
     if (isSupportedChain) {
-      if (unsettledPnL !== 0 && !isDeposit) return "Settle PnL First";
+      if ((unsettledPnL > 1 && !isDeposit) || (unsettledPnL < -1 && !isDeposit))
+        return "Settle PnL First";
       if (isDeposit) {
         if (amount != null && Number(allowance) < Number(amount))
           return "Approve";
@@ -185,10 +196,11 @@ export const Deposit = () => {
 
   return (
     <>
-      <Dialog open={open}>
+      <Dialog open={openWithdraw}>
         <DialogTrigger
           onClick={() => {
-            if (state.status >= 2) setOpen(true);
+            if (state.status >= 5) setOpenWithdraw(true);
+            else if (state.status >= 2) setIsEnableTradingModalOpen(true);
             else setIsWalletConnectorOpen(true);
           }}
         >
@@ -201,8 +213,8 @@ export const Deposit = () => {
           </button>
         </DialogTrigger>
         <DialogContent
-          close={() => setOpen(false)}
-          className="w-full max-w-[475px] h-auto max-h-auto flex flex-col gap-0"
+          close={() => setOpenWithdraw(false)}
+          className="w-full max-w-[475px] h-auto max-h-auto flex flex-col gap-0 "
         >
           <DialogHeader>
             <div className="w-full mb-5">

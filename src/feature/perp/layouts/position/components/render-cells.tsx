@@ -1,5 +1,4 @@
 import { useGeneralContext } from "@/context";
-import { triggerAlert } from "@/lib/toaster";
 import { PosterModal } from "@/modals/poster";
 import { cn } from "@/utils/cn";
 import {
@@ -7,8 +6,10 @@ import {
   getFormattedAmount,
   getFormattedDate,
 } from "@/utils/misc";
-import { useOrderEntry } from "@orderly.network/hooks";
+import { useMarginRatio, useOrderEntry } from "@orderly.network/hooks";
+import { OrderEntity } from "@orderly.network/types";
 import { Dispatch, SetStateAction } from "react";
+import { toast } from "react-toastify";
 import { EditModal } from "./edit-modal";
 import { TPSLModal } from "./tp-sl-modal";
 
@@ -25,6 +26,7 @@ export const RenderCells = ({
   order,
   activeSection,
   closePendingOrder,
+  rows,
 }: any) => {
   const {
     TPSLOpenOrder,
@@ -33,16 +35,24 @@ export const RenderCells = ({
     editPendingPositionOpen,
     setEditPendingPositionOpen,
   } = useGeneralContext();
+
+  const { currentLeverage } = useMarginRatio();
+
   const { onSubmit } = useOrderEntry(
     {
       symbol: order.symbol,
-      side: (order.position_qty as number) >= 0 ? "SELL" : ("BUY" as any),
-      order_type: "MARKET" as any,
+      side: order?.side
+        ? order.side
+        : order?.algo_order?.side
+        ? order?.algo_order?.side
+        : (order.position_qty as number) >= 0
+        ? "SELL"
+        : ("BUY" as any),
+      order_type: order.type || "MARKET",
       order_quantity: order?.position_qty,
     },
     { watchOrderbook: true }
   );
-
   return (
     <>
       {renderCommonCells(order)}
@@ -53,10 +63,11 @@ export const RenderCells = ({
         setTPSLOpenOrder,
         setOrderPositions,
         onSubmit,
-        setEditPendingPositionOpen
+        setEditPendingPositionOpen,
+        currentLeverage
       )}
+
       {TPSLOpenOrder ? <TPSLModal order={order} /> : null}
-      {editPendingPositionOpen ? <EditModal /> : null}
     </>
   );
 };
@@ -82,37 +93,58 @@ const renderCommonCells = (trade: any) => (
 );
 
 const renderAdditionalCells = (
-  trade: any,
+  trade: OrderEntity | any,
   section: Sections,
   closePendingOrder: Function,
   setTPSLOpenOrder: Dispatch<SetStateAction<boolean>>,
   setOrderPositions: any,
   onSubmit: any,
-  setEditPendingPositionOpen: Dispatch<SetStateAction<boolean>>
+  setEditPendingPositionOpen: Dispatch<SetStateAction<boolean>>,
+  currentLeverage: number | null
 ) => {
   if (section === Sections.FILLED) {
+    let filledOrder =
+      trade.child_orders?.length > 0
+        ? trade.child_orders[0].algo_status === "FILLED"
+          ? trade.child_orders[0]
+          : trade.child_orders[1]
+        : trade;
     return (
       <>
-        <td className={tdStyle}>{trade.type}</td>
+        <td className={tdStyle}>{filledOrder.type}</td>
         <td
           className={cn(
             tdStyle,
-            `${trade.side === "SELL" ? "text-red" : "text-green"}`
+            `${filledOrder.side === "SELL" ? "text-red" : "text-green"}`
           )}
         >
-          {trade.side}
+          {filledOrder.side}
         </td>
-        <td className={tdStyle}>{trade.total_executed_quantity}</td>
-        <td className={tdStyle}>{trade.average_executed_price}</td>
-        <td className={tdStyle}>--</td>
-        <td className={tdStyle}>--</td>
+        <td className={tdStyle}>{filledOrder.total_executed_quantity}</td>
         <td className={tdStyle}>
-          {getFormattedAmount(trade.quantity * trade.average_executed_price)}
+          {getFormattedAmount(filledOrder.trigger_price)}
         </td>
-        <td className={tdStyle}>{trade.total_fee}</td>
-        <td className={tdStyle}>{trade.status}</td>
+        <td className={tdStyle}>{filledOrder.trigger_price || "--"}</td>
+        <td
+          className={cn(
+            tdStyle,
+            `${
+              filledOrder.realized_pnl > 0
+                ? "text-green"
+                : filledOrder.realized_pnl < 0
+                ? "text-red"
+                : "text-white"
+            }`
+          )}
+        >
+          {filledOrder.realized_pnl || "--"}
+        </td>
+
+        <td className={tdStyle}>{getFormattedAmount(filledOrder.total_fee)}</td>
+        <td className={tdStyle}>
+          {filledOrder.status || filledOrder.algo_status}
+        </td>
         <td className={tdStyle}>{trade.reduce_only ? "Yes" : "No"}</td>
-        <td className={tdStyle}>No</td>
         <td className={cn(tdStyle, "pr-5 text-end")}>
           {getFormattedDate(trade.created_time)}
         </td>
@@ -137,7 +169,7 @@ const renderAdditionalCells = (
         </td>
         <td className={tdStyle}>--</td>
         <td className={tdStyle}>
-          <div className="w-full h-full flex flex-col items-end">
+          <div className="w-full h-full flex flex-col items-start">
             <div className="h-[5px] w-[100px] rounded bg-terciary">
               <div
                 className={`h-full bg-base_color rounded`}
@@ -166,17 +198,7 @@ const renderAdditionalCells = (
         </td>
         <td className={cn(tdStyle, "pr-5")}>
           <div className="flex items-center justify-end w-full h-full">
-            <button
-              onClick={() => {
-                setEditPendingPositionOpen(trade);
-                setOrderPositions([]);
-              }}
-              className="text-white bg-terciary border border-base_color text-bold font-poppins text-xs
-              h-[25px] px-2 rounded flex items-center
-          "
-            >
-              Edit
-            </button>
+            <EditModal order={trade} />
             <button
               onClick={() => {
                 closePendingOrder(trade.order_id);
@@ -199,7 +221,6 @@ const renderAdditionalCells = (
     const maintenanceMargin =
       Math.abs(trade.position_qty) * trade.mark_price * trade.MMR_with_orders;
 
-    console.log("rrr", trade);
     return (
       <>
         <td
@@ -233,23 +254,23 @@ const renderAdditionalCells = (
             }`
           )}
         >
-          <div className="flex items-center justify-start w-full h-full">
+          <div className="flex items-center justify-start w-full h-full font-medium">
             <p className="mr-2">
               {`${
                 trade.unrealized_pnl > 0
-                  ? `+$${Math.abs(trade.unrealized_pnl).toFixed(
-                      2
-                    )} (${trade.unrealized_pnl_ROI.toFixed(2)})`
-                  : `-$${Math.abs(trade.unrealized_pnl).toFixed(
-                      2
-                    )} (${trade.unrealized_pnl_ROI.toFixed(2)})`
+                  ? `+$${Math.abs(trade.unrealized_pnl).toFixed(2)} (${Number(
+                      trade.unrealized_pnl_ROI
+                    ).toFixed(2)})`
+                  : `-$${Math.abs(trade.unrealized_pnl).toFixed(2)} (${Number(
+                      trade.unrealized_pnl_ROI
+                    ).toFixed(2)}%)`
               }`}{" "}
             </p>
             <PosterModal order={trade} />
           </div>
         </td>
         <td className={tdStyle}>
-          <div className="flex items-center justify-start w-full h-full text-font-80">
+          <div className="flex items-center justify-start w-full font-medium h-full text-font-80">
             <p
               className={`${
                 trade.tp_trigger_price ? "text-green" : "text-white"
@@ -257,7 +278,7 @@ const renderAdditionalCells = (
             >
               {trade.tp_trigger_price || "--"}
             </p>
-            /
+            <p className="mx-1"> / </p>
             <p
               className={`${
                 trade.sl_trigger_price ? "text-red" : "text-white"
@@ -267,7 +288,9 @@ const renderAdditionalCells = (
             </p>
           </div>
         </td>
-        <td className={tdStyle}>{getFormattedAmount(trade.est_liq_price)}</td>
+        <td className={cn(tdStyle, "text-orange-300")}>
+          {getFormattedAmount(trade.est_liq_price)}
+        </td>
         <td className={tdStyle}>{getFormattedAmount(trade.cost_position)}</td>
         <td className={tdStyle}>
           ${isNaN(totalMargin.toFixed(2)) ? "N/A" : totalMargin.toFixed(2)}
@@ -299,16 +322,25 @@ const renderAdditionalCells = (
                   trigger_price: undefined,
                   reduce_only: true,
                 };
+                const idToast = toast.loading("Closing Order");
 
                 try {
                   await onSubmit(cancelOrder);
-                  triggerAlert("Success", "Position is successfully closed");
+                  toast.update(idToast, {
+                    render: "Order closed",
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 2000,
+                  });
                   setOrderPositions(["closed"]);
                 } catch (e) {
-                  triggerAlert(
-                    "Error",
-                    "Failed to close position. Please try again."
-                  );
+                  toast.update(idToast, {
+                    render:
+                      "Unable to close position. Pending orders interfere with the position amount.",
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 2000,
+                  });
                 }
               }}
               className="h-[25px] w-fit px-2 text-xs ml-2.5 text-white bg-base_color border-borderColor-DARK rounded"
@@ -320,39 +352,74 @@ const renderAdditionalCells = (
       </>
     );
   } else if (section === Sections.ORDER_HISTORY) {
+    let filledOrder =
+      trade.child_orders?.length > 0
+        ? trade.child_orders[0].algo_status === "FILLED"
+          ? trade.child_orders[0]
+          : trade.child_orders[1]
+        : trade;
     return (
       <>
-        <td className={tdStyle}>{trade.type}</td>
+        <td className={tdStyle}>{filledOrder.type || filledOrder.algo_type}</td>
         <td
           className={cn(
             tdStyle,
-            `${trade.side === "SELL" ? "text-red" : "text-green"}`
+            `${filledOrder.side === "SELL" ? "text-red" : "text-green"}`
           )}
         >
-          {trade.side}
+          {filledOrder.side}
         </td>
-        <td className={tdStyle}>{trade.total_executed_quantity}</td>
         <td className={tdStyle}>
-          {getFormattedAmount(trade.average_executed_price)}
+          {filledOrder.total_executed_quantity
+            ? filledOrder.total_executed_quantity
+            : filledOrder?.total_executed_quantity}
+        </td>
+        <td className={tdStyle}>
+          {filledOrder.average_executed_price
+            ? getFormattedAmount(filledOrder.average_executed_price)
+            : "--"}
         </td>
 
-        <td className={tdStyle}>--</td>
-        <td className={tdStyle}>--</td>
+        <td className={tdStyle}>{filledOrder?.trigger_price_type || "--"}</td>
+        <td
+          className={cn(
+            tdStyle,
+            `${
+              filledOrder?.realized_pnl > 0
+                ? "text-green"
+                : filledOrder?.realized_pnl < 0
+                ? "text-red"
+                : "text-white"
+            }`
+          )}
+        >
+          {getFormattedAmount(filledOrder?.realized_pnl) || "--"}
+        </td>
         <td className={tdStyle}>
           {getFormattedAmount(
-            trade.total_executed_quantity * trade.average_executed_price
+            filledOrder.total_executed_quantity *
+              filledOrder.average_executed_price
           )}
         </td>
-        <td className={tdStyle}>{trade.total_fee}</td>
-        <td className={tdStyle}>{trade.status}</td>
-        <td className={tdStyle}>{trade.reduce_only ? "Yes" : "No"}</td>
-        <td className={tdStyle}>No</td>
+        <td className={tdStyle}>
+          {filledOrder.total_fee
+            ? getFormattedAmount(filledOrder.total_fee)
+            : "--"}
+        </td>
+        <td className={tdStyle}>
+          {filledOrder.status ? filledOrder.status : filledOrder?.algo_status}
+        </td>
+        <td className={tdStyle}>{filledOrder.reduce_only ? "Yes" : "No"}</td>
         <td className={cn(tdStyle, "pr-5 text-end")}>
-          {getFormattedDate(trade.created_time)}
+          {getFormattedDate(filledOrder.created_time)}
         </td>
       </>
     );
   } else if (section === Sections.TP_SL) {
+    let filledOrder =
+      trade.child_orders[0].algo_status === "FILLED"
+        ? trade.child_orders[0]
+        : trade.child_orders[1];
     return (
       <>
         <td
@@ -363,15 +430,30 @@ const renderAdditionalCells = (
         >
           {trade.side}
         </td>
-        <td className={tdStyle}>{trade.total_executed_quantity}</td>
-        <td className={tdStyle}>--</td>
+        <td className={tdStyle}>{filledOrder.total_executed_quantity}</td>
         <td className={tdStyle}>
-          {getFormattedAmount(trade.average_executed_price)}
+          {filledOrder.algo_type?.split("_").join(" ")}
         </td>
-        <td className={tdStyle}>--</td>
-        <td className={tdStyle}>{trade.reduce_only ? "Yes" : "No"}</td>
+        <td className={tdStyle}>{filledOrder.average_executed_price}</td>
+        <td className={tdStyle}>{filledOrder.trigger_price}</td>
+
+        <td
+          className={cn(
+            tdStyle,
+            `${
+              filledOrder.realized_pnl > 0
+                ? "text-green"
+                : filledOrder.realized_pnl < 0
+                ? "text-red"
+                : "text-white"
+            }`
+          )}
+        >
+          ${filledOrder.realized_pnl}
+        </td>
+        <td className={tdStyle}>${filledOrder.total_fee.toFixed(2)}</td>
         <td className={cn(tdStyle, "pr-5 text-end")}>
-          {getFormattedDate(trade.created_time)}
+          {getFormattedDate(filledOrder.trigger_time)}
         </td>
       </>
     );
