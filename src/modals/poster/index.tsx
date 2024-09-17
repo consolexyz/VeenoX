@@ -9,6 +9,18 @@ import { useMarginRatio } from "@orderly.network/hooks";
 import { useEffect, useRef, useState } from "react";
 import { FaShareAlt } from "react-icons/fa";
 
+const images = [
+  "1.webp",
+  "2.webp",
+  "4.webp",
+  "6.webp",
+  "7.webp",
+  "8.webp",
+  "16.avif",
+  "17.avif",
+  "21.avif",
+];
+
 export const PosterModal = ({ order }: any) => {
   const [imageUrl, setImageUrl] = useState(null);
   const [selectedImage, setSelectedImage] = useState("/poster/4.webp");
@@ -30,6 +42,12 @@ export const PosterModal = ({ order }: any) => {
 
   const { currentLeverage } = useMarginRatio();
   const canvasRef = useRef(null);
+
+  const calculateLeverage = (position: { imr: number; notional: number }) => {
+    if (!position || position.imr === 0) return 0;
+    const result = position.notional / (position.notional * position.imr);
+    return Math.round(result);
+  };
 
   useEffect(() => {
     const canvas: any = canvasRef.current;
@@ -95,7 +113,7 @@ export const PosterModal = ({ order }: any) => {
 
       ctx.fillStyle = "rgb(255,255,255)";
       ctx.fillText(
-        `${Math.round(currentLeverage)}X`,
+        `${calculateLeverage(order)}X`,
         50 + sideWidth + pipeWidth1 + symbolWidth + pipeWidth2,
         100
       );
@@ -373,29 +391,21 @@ export const PosterModal = ({ order }: any) => {
                 Overlay:
               </p>
               <div className="flex items-center flex-wrap gap-2 w-fit min-w-fit">
-                {Array.from({ length: 9 }).map((_, index) => (
+                {images.map((image, index) => (
                   <button
                     key={index}
                     className={`border cursor-pointer ${
-                      selectedImage === `/poster/${index + 1}.webp`
+                      selectedImage === `/poster/${image}`
                         ? "border-base_color"
                         : "border-borderColor"
                     } rounded p-2`}
-                    onClick={() =>
-                      setSelectedImage(
-                        index + 1 === 10
-                          ? "/poster/10.png"
-                          : `/poster/${index + 1}.webp`
-                      )
-                    }
+                    // 17
+                    //
+                    onClick={() => setSelectedImage(`/poster/${image}`)}
                   >
                     <img
                       className="h-[48px] w-[48px]"
-                      src={
-                        index + 1 === 10
-                          ? "/poster/10.png"
-                          : `/poster/${index + 1}.webp`
-                      }
+                      src={`/poster/${image}`}
                     />
                   </button>
                 ))}

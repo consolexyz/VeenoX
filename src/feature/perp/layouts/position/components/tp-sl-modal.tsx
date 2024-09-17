@@ -44,12 +44,12 @@ export const TPSLModal = ({ order }: any) => {
       setLoading(false);
       return;
     } else setError([""]);
-    const idToast = toast.loading("Closing Order");
+    const idToast = toast.loading("Setting TP/SL");
 
     try {
       await submit();
       toast.update(idToast, {
-        render: "TP/SL set",
+        render: "TP/SL set successfully",
         type: "success",
         isLoading: false,
         autoClose: 2000,
@@ -71,7 +71,7 @@ export const TPSLModal = ({ order }: any) => {
   };
 
   const handleRemoveTPSL = async (): Promise<void> => {
-    const idToast = toast.loading("Closing Order");
+    const idToast = toast.loading("Reseting TP/SL");
 
     try {
       await cancelAllTPSLOrders();
@@ -106,9 +106,7 @@ export const TPSLModal = ({ order }: any) => {
         className="max-w-[440px] w-[90%] h-auto max-h-auto flex flex-col gap-0"
       >
         <DialogHeader>
-          <DialogHeader>
-            <DialogTitle className="pb-5">Edit TP/SL</DialogTitle>
-          </DialogHeader>
+          <DialogTitle className="pb-5">Edit TP/SL</DialogTitle>
         </DialogHeader>
         <div className="flex items-center justify-between">
           <p className="text-sm text-white mb-2">Take profit:</p>
@@ -143,17 +141,21 @@ export const TPSLModal = ({ order }: any) => {
                   : "text-font-80"
               }`}
               placeholder="Gain"
+              readOnly={true}
               value={
                 activePnlOrOffset === "$"
                   ? algoOrder.tp_pnl
                   : (Number(algoOrder.tp_offset_percentage) * 100).toFixed(2)
               }
-              onChange={(e) =>
-                handleChange(
-                  activePnlOrOffset === "$" ? "tp_pnl" : "tp_offset_percentage",
-                  e.target.value
-                )
-              }
+              onChange={(e) => {
+                if (e.target.value)
+                  handleChange(
+                    activePnlOrOffset === "$"
+                      ? "tp_pnl"
+                      : "tp_offset_percentage",
+                    e.target.value
+                  );
+              }}
             />
             <Popover>
               <PopoverTrigger className="h-full min-w-fit">

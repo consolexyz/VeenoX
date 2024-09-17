@@ -305,6 +305,14 @@ export const Perp = ({ asset }: PerpProps) => {
           <OpenTrade asset={asset} holding={usdc?.holding} />
         </div>
       </div>
+      <div className="flex items-center justify-center lg:hidden h-screen w-screen fixed top-0 bg-[rgba(0,0,0,0.4)] z-[120]">
+        <div className="bg-secondary border border-borderColor rounded p-2.5 px-4">
+          <p className="text-white font-bold text-base text-center">
+            Mobile version isn&apos;t ready yet. <br />
+            Come back later!
+          </p>{" "}
+        </div>
+      </div>
       <MaintenanceStatusModal />
       <MobileOpenTrade asset={asset} holding={usdc?.holding} />
     </div>

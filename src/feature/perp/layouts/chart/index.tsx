@@ -301,7 +301,9 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
         } catch (error) {
           console.error("Error removing chart listeners:", error);
         }
-        observer.disconnect();
+        try {
+          observer.disconnect();
+        } catch (e) {}
       };
     },
     [saveChartState]

@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@/lib/shadcn/dialog";
 import { triggerAlert } from "@/lib/toaster";
@@ -217,33 +218,35 @@ export const Deposit = () => {
           className="w-full max-w-[475px] h-auto max-h-auto flex flex-col gap-0 "
         >
           <DialogHeader>
-            <div className="w-full mb-5">
-              <div className="flex items-center w-full h-[34px] relative">
-                <button
-                  className={`${
-                    isDeposit ? "text-white" : "text-font-60"
-                  } w-1/2 h-fit pb-4 text-base font-medium transition-all duration-200 ease-in-out`}
-                  onClick={() => setIsDeposit(true)}
-                >
-                  Deposit
-                </button>
-                <button
-                  className={`${
-                    !isDeposit ? "text-white" : "text-font-60"
-                  } w-1/2 h-fit pb-4 text-base font-medium transition-all duration-200 ease-in-out`}
-                  onClick={() => setIsDeposit(false)}
-                >
-                  Withdraw
-                </button>
+            <DialogTitle className="">
+              <div className="w-full mb-5">
+                <div className="flex items-center w-full h-[34px] relative">
+                  <button
+                    className={`${
+                      isDeposit ? "text-white" : "text-font-60"
+                    } w-1/2 h-fit pb-4 text-base font-medium transition-all duration-200 ease-in-out`}
+                    onClick={() => setIsDeposit(true)}
+                  >
+                    Deposit
+                  </button>
+                  <button
+                    className={`${
+                      !isDeposit ? "text-white" : "text-font-60"
+                    } w-1/2 h-fit pb-4 text-base font-medium transition-all duration-200 ease-in-out`}
+                    onClick={() => setIsDeposit(false)}
+                  >
+                    Withdraw
+                  </button>
+                </div>
+                <div className="bg-terciary h-[1px] w-full relative">
+                  <div
+                    className={`h-[1px] w-1/2 bottom-0 transition-all duration-200 ease-in-out bg-font-80 absolute ${
+                      isDeposit ? "left-0" : "left-1/2"
+                    } `}
+                  />
+                </div>
               </div>
-              <div className="bg-terciary h-[1px] w-full relative">
-                <div
-                  className={`h-[1px] w-1/2 bottom-0 transition-all duration-200 ease-in-out bg-font-80 absolute ${
-                    isDeposit ? "left-0" : "left-1/2"
-                  } `}
-                />
-              </div>
-            </div>
+            </DialogTitle>
           </DialogHeader>
           <TemplateDisplay
             balance={isDeposit ? balance : availableWithdraw.toString()}

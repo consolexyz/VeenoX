@@ -3,8 +3,6 @@ import { formatSymbol, getFormattedAmount } from "@/utils/misc";
 import { Metadata, ResolvingMetadata } from "next";
 import RealtimePriceTitleUpdater from "./useMarkPrice";
 
-// export const dynamic = "force-static";
-
 type ParamsProps = {
   params: {
     perp: string[];

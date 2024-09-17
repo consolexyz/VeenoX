@@ -393,3 +393,29 @@ export const connectorsToImage = {
 export function formatQuantity(quantity: number, tickSize: number) {
   return Math.floor(quantity / tickSize) * tickSize;
 }
+
+export function truncatePrice(price: string | number): string {
+  const numPrice = typeof price === "string" ? parseFloat(price) : price;
+
+  if (isNaN(numPrice)) {
+    return "0";
+  }
+
+  if (numPrice >= 100) {
+    return numPrice.toFixed(2);
+  }
+
+  if (numPrice >= 1) {
+    return numPrice.toFixed(3);
+  }
+
+  if (numPrice < 0.01) {
+    return numPrice.toFixed(6);
+  }
+
+  if (numPrice < 0.00001) {
+    return numPrice.toFixed(8);
+  }
+
+  return numPrice.toFixed(4);
+}

@@ -201,7 +201,7 @@ const renderAdditionalCells = (
             <EditModal order={trade} />
             <button
               onClick={() => {
-                closePendingOrder(trade.order_id);
+                closePendingOrder(trade.order_id, trade.symbol);
                 setOrderPositions([]);
               }}
               className="h-[25px] w-fit px-2 text-xs ml-2.5 text-white bg-base_color border-borderColor-DARK rounded"
@@ -434,7 +434,7 @@ const renderAdditionalCells = (
         <td className={tdStyle}>
           {filledOrder.algo_type?.split("_").join(" ")}
         </td>
-        <td className={tdStyle}>{filledOrder.average_executed_price}</td>
+        <td className={tdStyle}>{filledOrder.trigger_trade_price}</td>
         <td className={tdStyle}>{filledOrder.trigger_price}</td>
 
         <td

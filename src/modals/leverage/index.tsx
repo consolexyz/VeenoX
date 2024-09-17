@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@/lib/shadcn/dialog";
 import { useLeverage, useMarginRatio } from "@orderly.network/hooks";
@@ -32,7 +33,9 @@ export const Leverage = () => {
           setShowPopup(false);
         }}
       >
-        <DialogHeader className="text-xl">Edit Max Leverage</DialogHeader>
+        <DialogHeader className="text-xl">
+          <DialogTitle className="">Edit Max Leverage</DialogTitle>
+        </DialogHeader>
         <LeverageContent />
       </DialogContent>
     </Dialog>

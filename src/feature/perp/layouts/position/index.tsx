@@ -61,10 +61,11 @@ export const Position = ({ asset }: PositionProps) => {
     return () => window.removeEventListener("resize", updateUnderline);
   }, [activeSection]);
 
-  const closePendingOrder = async (id: number) => {
+  const closePendingOrder = async (id: number, symbol: string) => {
     const idToast = toast.loading("Closing Order");
+    console.log("symbol", symbol);
     try {
-      await cancelOrder(id, asset?.symbol);
+      await cancelOrder(id, symbol);
       toast.update(idToast, {
         render: "Order closed",
         type: "success",
